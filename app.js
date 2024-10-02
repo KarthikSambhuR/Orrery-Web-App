@@ -131,6 +131,7 @@ const planetNameDivs = planetsData.map(data => {
 
 // Camera positioning
 camera.position.z = 50;
+camera.position.y = 30;
 
 // Orbit controls for zoom and rotation
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
