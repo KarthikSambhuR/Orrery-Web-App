@@ -73,7 +73,8 @@ const planetsData = [
   [0.9, 'textures/jupiter.jpg', 5.20 * scale, 'Jupiter'],   // Jupiter
   [0.7, 'textures/saturn.jpg', 9.58 * scale, 'Saturn'],     // Saturn
   [0.6, 'textures/uranus.jpg', 19.22 * scale, 'Uranus'],    // Uranus
-  [0.5, 'textures/neptune.jpg', 30.05 * scale, 'Neptune']   // Neptune
+  [0.5, 'textures/neptune.jpg', 30.05 * scale, 'Neptune'],  // Neptune
+  [0.2, 'textures/pluto.jpg', 39.48 * scale, 'Pluto']       // Pluto
 ];
 
 // Add planets and orbits
@@ -120,46 +121,12 @@ function updateMoonPosition() {
 }
 
 // Function to create a text sprite for the planet name with higher resolution
-function createTextSprite(message) {
-  const canvas = document.createElement('canvas');
-  const context = canvas.getContext('2d');
-
-  // Set higher resolution by increasing the canvas size
-  const fontSize = 32;
-  context.font = `Bold ${fontSize}px Helvetica`;
-  const textWidth = context.measureText(message).width;
-
-  // Set canvas size based on text size with a scaling factor
-  const scaleFactor = 2; // Scale for higher resolution
-  canvas.width = (textWidth + 20) * scaleFactor; // Add some padding
-  canvas.height = (fontSize + 10) * scaleFactor; // Add some padding
-
-  // Set the context scale for higher resolution
-  context.scale(scaleFactor, scaleFactor);
-
-  context.fillStyle = 'rgba(255, 255, 255, 0)'; // Semi-transparent white background
-  context.fillRect(0, 0, canvas.width / scaleFactor, canvas.height / scaleFactor);
-  
-  context.fillStyle = 'white'; // Text color
-  context.fillText(message, 10, fontSize * scaleFactor / 2); // Draw text
-
-  const texture = new THREE.CanvasTexture(canvas);
-  const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
-  const sprite = new THREE.Sprite(spriteMaterial);
-  sprite.scale.set(6, 3, 1); // Scale the sprite for larger text
-  
-  return sprite;
-}
-
-// Create a sprite for each planet and position it above the planet
-const planetSprites = planets.map(planet => {
-  const sprite = createTextSprite(planet.name);
-  
-  // Position the sprite centered and slightly above the planet
-  sprite.position.set(planet.position.x, planet.position.y + 0.7, planet.position.z);
-  scene.add(sprite);
-  
-  return sprite;
+const planetNameDivs = planetsData.map(data => {
+  const nameDiv = document.createElement('div');
+  nameDiv.textContent = data[3]; // Planet name
+  nameDiv.className = 'planet-name'; // Class for styling
+  document.getElementById('planet-names').appendChild(nameDiv);
+  return nameDiv;
 });
 
 // Camera positioning
@@ -175,24 +142,50 @@ controls.enableZoom = true;
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
-// Detecting clicks on planets and showing planet name
+// Sample data for planet details
+const planetDetailsData = {
+  Mercury: 'The closest planet to the Sun, Mercury is a small, rocky planet with extreme temperature fluctuations due to its thin atmosphere.',
+  Venus: `Venus is often called Earth's "sister planet" due to its similar size and composition. It has a thick atmosphere filled with carbon dioxide, resulting in a strong greenhouse effect.`,
+  Earth: 'The only known planet to support life, Earth has a diverse environment with oceans, mountains, and a variety of ecosystems.',
+  Mars: `Known as the "Red Planet" because of its iron oxide (rust) on its surface, Mars has the largest volcano and canyon in the solar system.`,
+  Jupiter: 'The largest planet in the solar system, Jupiter is a gas giant with a thick atmosphere and a famous storm known as the Great Red Spot.',
+  Saturn: `Saturn is well-known for its stunning rings made of ice and rock particles. It's a gas giant like Jupiter, with a thick atmosphere and many moons.`,
+  Uranus: 'Uranus is an ice giant with a unique blue color due to methane in its atmosphere. It rotates on its side, making it the only planet that rolls along its orbital path.',
+  Neptune: 'The farthest planet from the Sun, Neptune is another ice giant known for its striking blue color and strong winds, which are the fastest in the solar system.',
+  Pluto: 'Once considered the ninth planet, Pluto is now classified as a dwarf planet. It has a complex atmosphere and five known moons, the largest being Charon.'
+};
+
 function onMouseClick(event) {
-  // Calculate mouse position in normalized device coordinates (-1 to +1 for both axes)
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
-  // Update the raycaster with the camera and mouse position
   raycaster.setFromCamera(mouse, camera);
-
-  // Calculate intersects with planets and the Moon
-  const allBodies = [...planets, moon]; // Include Moon in the clickable objects
+  const allBodies = [...planets, moon];
   const intersects = raycaster.intersectObjects(allBodies);
 
   if (intersects.length > 0) {
     const clickedBody = intersects[0].object;
     console.log(`You clicked on ${clickedBody.name}`);
+
+    // Show the sidebar with planet details
+    const sidebar = document.getElementById('sidebar');
+    const planetNameElement = document.getElementById('planetName');
+    const planetDetailsElement = document.getElementById('planetDetails');
+    const planetimage = document.getElementById('planetimage');
+
+    planetNameElement.innerText = clickedBody.name;
+    planetimage.src = `images/${clickedBody.name.toLowerCase()}.png`;
+    planetDetailsElement.innerText = planetDetailsData[clickedBody.name] || 'No details available.';
+    
+    sidebar.style.display = 'block'; // Show the sidebar
   }
 }
+
+
+// Close button functionality
+document.getElementById('closeButton').addEventListener('click', () => {
+  document.getElementById('sidebar').style.display = 'none'; // Hide the sidebar
+});
 
 // Add event listener for mouse clicks
 window.addEventListener('click', onMouseClick);
@@ -207,13 +200,24 @@ function animate() {
   // Simple rotation for planets
   planets.forEach((planet, index) => {
     planet.rotation.y += 0.01;
-    // Update sprite position
-    planetSprites[index].position.set(planet.position.x, planet.position.y + 0.7, planet.position.z); // Adjust the sprite position
+
+    // Update HTML position based on 3D coordinates
+    const screenPosition = planet.position.clone();
+    screenPosition.project(camera); // Project to screen coordinates
+
+    // Convert normalized device coordinates to pixel coordinates
+    const x = (screenPosition.x * 0.5 + 0.5) * window.innerWidth;
+    const y = (-(screenPosition.y * 0.5) + 0.5) * window.innerHeight;
+
+    // Set the position of the planet name, move it slightly above the planet
+    const offsetY = -30; // Adjust this value to control the vertical offset
+    planetNameDivs[index].style.transform = `translate(-50%, -50%) translate(${x}px, ${y + offsetY}px) translateZ(-0.5px)`;
   });
 
   controls.update();
   renderer.render(scene, camera);
 }
+
 
 animate();
 
