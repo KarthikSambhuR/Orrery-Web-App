@@ -59,15 +59,32 @@ canvas {
   position: absolute;
   top: 0;
   left: 0;
-  pointer-events: none; /* Prevent mouse events */
+  pointer-events: none; 
   z-index: 0;
 }
 
 .planet-name {
   position: absolute;
-  font-size: 24px; /* Set the base font size */
+  font-size: 24px; 
   color: white;
   text-align: center;
-  pointer-events: none; /* Prevent mouse events */
-  z-index: 1; /* Make sure it's behind the planet */
+  pointer-events: none; 
+  z-index: 1; 
+}
+
+#instructions {
+  border-radius: 20px;
+  border: #fff 2px solid;
+}
+
+.popup {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 15px;
+  border-radius: 10px;
+  font-size: 17px;
+  z-index: 100;
 }
